@@ -111,6 +111,13 @@ impl CodergenBackend for LlmCodergenBackend {
         let mut params = GenerateParams::new(model, prompt);
         params.client = Some(self.client.clone());
 
+        // Route to the node's explicit provider when specified.
+        // Without this, the Client defaults to the first registered provider,
+        // which rejects model names belonging to other providers.
+        if !node.llm_provider.is_empty() {
+            params.provider = Some(node.llm_provider.clone());
+        }
+
         let result = generate(params).await.map_err(|e| EngineError::Handler {
             node_id: node.id.clone(),
             message: format!("LLM call failed: {e}"),
