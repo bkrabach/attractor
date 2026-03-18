@@ -370,6 +370,25 @@ impl<I: Interviewer + Send + Sync> Interviewer for RecordingInterviewer<I> {
 }
 
 // ---------------------------------------------------------------------------
+// Context display helper
+// ---------------------------------------------------------------------------
+
+/// Format the LLM output block to display before a human-gate prompt.
+///
+/// Returns `Some(block)` when the question's `metadata` contains a non-empty
+/// `"last_response"` key; `None` otherwise.  The caller is responsible for
+/// printing the returned string before showing the question text.
+pub fn format_llm_context_block(question: &Question) -> Option<String> {
+    match question.metadata.get("last_response") {
+        Some(llm_output) if !llm_output.is_empty() => Some(format!(
+            "--- LLM Output ---\n{}\n--- End Output ---\n",
+            llm_output
+        )),
+        _ => None,
+    }
+}
+
+// ---------------------------------------------------------------------------
 // ConsoleInterviewer
 // ---------------------------------------------------------------------------
 
@@ -392,6 +411,11 @@ pub struct ConsoleInterviewer;
 impl Interviewer for ConsoleInterviewer {
     async fn ask(&self, question: Question) -> Answer {
         use tokio::io::AsyncBufReadExt as _;
+
+        // Show LLM context before prompting (if available).
+        if let Some(block) = format_llm_context_block(&question) {
+            println!("{}", block);
+        }
 
         // Print the question text.
         println!("{}", question.text);
@@ -711,6 +735,62 @@ mod tests {
         iv.ask(make_yesno_question()).await; // yes
         let a = iv.ask(make_yesno_question()).await; // no
         assert_eq!(a.value, AnswerValue::No);
+    }
+
+    // -- ConsoleInterviewer context display --
+
+    #[test]
+    fn console_interviewer_displays_llm_context_before_prompt() {
+        // RED: format_llm_context_block does not exist yet.
+        let mut q = make_yesno_question();
+        q.metadata.insert(
+            "last_response".to_string(),
+            "This is what the LLM produced.".to_string(),
+        );
+
+        let block = format_llm_context_block(&q);
+        assert!(
+            block.is_some(),
+            "must produce context block when last_response is in metadata"
+        );
+        let block_str = block.unwrap();
+        assert!(block_str.contains("--- LLM Output ---"), "must include header");
+        assert!(
+            block_str.contains("This is what the LLM produced."),
+            "must include LLM content"
+        );
+        assert!(block_str.contains("--- End Output ---"), "must include footer");
+
+        // Order: header → content → footer
+        let header_pos = block_str.find("--- LLM Output ---").unwrap();
+        let content_pos = block_str.find("This is what the LLM produced.").unwrap();
+        let footer_pos = block_str.find("--- End Output ---").unwrap();
+        assert!(header_pos < content_pos, "header must appear before content");
+        assert!(content_pos < footer_pos, "content must appear before footer");
+    }
+
+    #[test]
+    fn console_interviewer_no_context_block_when_metadata_empty() {
+        // RED: format_llm_context_block does not exist yet.
+        let q = make_yesno_question();
+        let block = format_llm_context_block(&q);
+        assert!(
+            block.is_none(),
+            "must not produce context block when no last_response in metadata"
+        );
+    }
+
+    #[test]
+    fn console_interviewer_no_context_block_when_last_response_empty() {
+        // RED: format_llm_context_block does not exist yet.
+        let mut q = make_yesno_question();
+        q.metadata
+            .insert("last_response".to_string(), String::new());
+        let block = format_llm_context_block(&q);
+        assert!(
+            block.is_none(),
+            "must not produce context block when last_response is empty string"
+        );
     }
 
     #[tokio::test]

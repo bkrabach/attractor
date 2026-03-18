@@ -40,7 +40,7 @@ impl Handler for WaitForHumanHandler {
     async fn execute(
         &self,
         node: &Node,
-        _context: &Context,
+        context: &Context,
         graph: &Graph,
         logs_root: &Path,
     ) -> Result<Outcome, EngineError> {
@@ -49,6 +49,23 @@ impl Handler for WaitForHumanHandler {
         if edges.is_empty() {
             return Ok(Outcome::fail("No outgoing edges for human gate"));
         }
+
+        // Build question metadata from context so the interviewer can display
+        // relevant LLM output before prompting the human.
+        let metadata = {
+            let mut m = HashMap::new();
+            let llm_context = context
+                .get("last_response")
+                .map(|v| v.to_string_repr())
+                .unwrap_or_default();
+            if !llm_context.is_empty() {
+                m.insert("last_response".to_string(), llm_context);
+            }
+            if let Some(prev) = context.get("human.gate.response") {
+                m.insert("previous_response".to_string(), prev.to_string_repr());
+            }
+            m
+        };
 
         // 2. Check for freeform mode (SRV-BUG-004).
         //
@@ -75,7 +92,7 @@ impl Handler for WaitForHumanHandler {
                 default: None,
                 timeout: node.timeout,
                 stage: node.id.clone(),
-                metadata: HashMap::new(),
+                metadata: metadata.clone(),
             };
 
             let answer = self.interviewer.ask(question).await;
@@ -146,7 +163,7 @@ impl Handler for WaitForHumanHandler {
             default: None,
             timeout: node.timeout,
             stage: node.id.clone(),
-            metadata: HashMap::new(),
+            metadata,
         };
 
         // 3. Present to interviewer.
@@ -657,6 +674,74 @@ mod tests {
                 .suggested_next_ids
                 .contains(&"next_node".to_string()),
             "freeform mode must route to the outgoing edge target"
+        );
+    }
+
+    #[tokio::test]
+    async fn wait_human_includes_last_response_in_metadata() {
+        // RED: context parameter is currently ignored; metadata will be empty.
+        let dir = tempfile::tempdir().unwrap();
+        let (g, node) = make_freeform_graph("brainstorm");
+
+        let answer = Answer {
+            value: AnswerValue::Selected("user response".to_string()),
+            selected_option: None,
+            text: "user response".to_string(),
+        };
+        let queue_iv = QueueInterviewer::new(vec![answer]);
+        let recording_iv = Arc::new(RecordingInterviewer::new(queue_iv));
+        let handler = WaitForHumanHandler::new(recording_iv.clone());
+
+        let ctx = Context::new();
+        ctx.set("last_response", Value::Str("LLM output text".to_string()));
+
+        let _ = handler.execute(&node, &ctx, &g, dir.path()).await.unwrap();
+
+        let recordings = recording_iv.recordings();
+        assert_eq!(recordings.len(), 1);
+        assert!(
+            recordings[0].question.metadata.contains_key("last_response"),
+            "question metadata must contain last_response key"
+        );
+        assert_eq!(
+            recordings[0].question.metadata.get("last_response").unwrap(),
+            "LLM output text",
+            "question metadata last_response must match context value"
+        );
+    }
+
+    #[tokio::test]
+    async fn wait_human_includes_previous_response_in_metadata() {
+        // RED: previous human.gate.response must also appear in metadata.
+        let dir = tempfile::tempdir().unwrap();
+        let (g, node) = make_freeform_graph("brainstorm");
+
+        let answer = Answer {
+            value: AnswerValue::Selected("user response".to_string()),
+            selected_option: None,
+            text: "user response".to_string(),
+        };
+        let queue_iv = QueueInterviewer::new(vec![answer]);
+        let recording_iv = Arc::new(RecordingInterviewer::new(queue_iv));
+        let handler = WaitForHumanHandler::new(recording_iv.clone());
+
+        let ctx = Context::new();
+        ctx.set(
+            "human.gate.response",
+            Value::Str("Previous human reply".to_string()),
+        );
+
+        let _ = handler.execute(&node, &ctx, &g, dir.path()).await.unwrap();
+
+        let recordings = recording_iv.recordings();
+        assert_eq!(recordings.len(), 1);
+        assert!(
+            recordings[0].question.metadata.contains_key("previous_response"),
+            "question metadata must contain previous_response key when human.gate.response is set"
+        );
+        assert_eq!(
+            recordings[0].question.metadata.get("previous_response").unwrap(),
+            "Previous human reply",
         );
     }
 

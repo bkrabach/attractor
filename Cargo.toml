@@ -1,48 +1,39 @@
 [package]
 name = "attractor"
 version = "0.1.0"
-edition = "2024"
-rust-version = "1.85"
+edition.workspace = true
+rust-version.workspace = true
 description = "DOT-based AI pipeline runner"
-license = "MIT"
+license.workspace = true
 repository = "https://github.com/bkrabach/attractor"
 readme = "README.md"
 keywords = ["pipeline", "workflow", "ai", "llm", "graph"]
 categories = ["development-tools", "asynchronous"]
 
 [dependencies]
-tokio        = { version = "1",    features = ["rt-multi-thread", "macros", "time", "fs", "process", "io-util", "io-std"] }
-reqwest      = { version = "0.12", features = ["json", "stream", "rustls-tls"], default-features = false }
-serde        = { version = "1",    features = ["derive"] }
-serde_json   = "1"
-async-trait  = "0.1"
-futures      = "0.3"
-thiserror    = "2"
-chrono       = { version = "0.4", features = ["serde"] }
-base64       = "0.22"
-uuid         = { version = "1", features = ["v4"] }
-tracing      = "0.1"
-rand         = "0.9"
-tokio-stream = { version = "0.1", features = ["sync"] }
-tokio-util   = { version = "0.7" }
-nom          = "8"
-indexmap     = { version = "2", features = ["serde"] }
-globset      = "0.4"
-tempfile     = "3"
-regex        = "1"
-sha2         = "0.10"
-clap         = { version = "4",   features = ["derive"] }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# Local dependencies (will need to be path or version depending on deployment)
-unified-llm       = { path = "../unified-llm", version = "0.1.0" }
-coding-agent-loop = { path = "../coding-agent-loop", version = "0.1.0" }
+unified-llm       = { workspace = true }
+coding-agent-loop = { workspace = true }
+tokio        = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+async-trait  = { workspace = true }
+futures      = { workspace = true }
+thiserror    = { workspace = true }
+chrono       = { workspace = true }
+uuid         = { workspace = true }
+tracing      = { workspace = true }
+tokio-util   = { workspace = true }
+nom          = { workspace = true }
+indexmap     = { workspace = true }
+clap         = { workspace = true }
+tracing-subscriber = { workspace = true }
+regex        = { workspace = true }
 
 [dev-dependencies]
-tokio    = { version = "1", features = ["rt-multi-thread", "macros"] }
-anyhow   = "1"
-proptest = "1"
-tempfile = "3"
+tokio    = { workspace = true, features = ["rt-multi-thread", "macros"] }
+anyhow   = { workspace = true }
+proptest = { workspace = true }
+tempfile = { workspace = true }
 
 [[bin]]
 name = "attractor"
