@@ -2,8 +2,8 @@ use std::fs;
 
 #[test]
 fn parse_consensus_task_dot() {
-    let content = fs::read_to_string("../consensus_task.dot")
-        .expect("consensus_task.dot not found at project root");
+    let content = fs::read_to_string("tests/fixtures/consensus_task.dot")
+        .expect("consensus_task.dot not found at tests/fixtures/");
     match attractor::parser::parse_dot(&content) {
         Ok(graph) => {
             println!(
@@ -33,8 +33,8 @@ fn parse_consensus_task_dot() {
 
 #[test]
 fn parse_semport_dot() {
-    let content =
-        fs::read_to_string("../semport.dot").expect("semport.dot not found at project root");
+    let content = fs::read_to_string("tests/fixtures/semport.dot")
+        .expect("semport.dot not found at tests/fixtures/");
     match attractor::parser::parse_dot(&content) {
         Ok(graph) => {
             println!(
