@@ -45,8 +45,8 @@ fn make_runner_with_mock(
 #[tokio::test]
 async fn e2e_consensus_task_mock() {
     let dir = tempfile::tempdir().unwrap();
-    let content = fs::read_to_string("../consensus_task.dot")
-        .expect("consensus_task.dot not found at project root");
+    let content = fs::read_to_string("tests/fixtures/consensus_task.dot")
+        .expect("consensus_task.dot not found in tests/fixtures/");
 
     // --- Parse ---
     println!("=== Step 1b: consensus_task.dot ===");
@@ -94,7 +94,7 @@ async fn e2e_consensus_task_mock() {
 async fn e2e_semport_mock() {
     let dir = tempfile::tempdir().unwrap();
     let content =
-        fs::read_to_string("../semport.dot").expect("semport.dot not found at project root");
+        fs::read_to_string("tests/fixtures/semport.dot").expect("semport.dot not found in tests/fixtures/");
 
     println!("=== Step 1b: semport.dot ===");
     let graph = match attractor::parser::parse_dot(&content) {
