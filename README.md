@@ -2,9 +2,8 @@
 
 A DOT-based pipeline runner for multi-stage AI workflows.
 
-[![crates.io](https://img.shields.io/crates/v/attractor.svg)](https://crates.io/crates/attractor)
-[![docs.rs](https://docs.rs/attractor/badge.svg)](https://docs.rs/attractor)
-[![CI](https://github.com/strongdm/attractor/actions/workflows/ci.yml/badge.svg)](https://github.com/strongdm/attractor/actions)
+[![CI](https://github.com/bkrabach/attractor/actions/workflows/ci.yaml/badge.svg)](https://github.com/bkrabach/attractor/actions)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Features
 
@@ -25,10 +24,12 @@ A DOT-based pipeline runner for multi-stage AI workflows.
 
 ## Quick Start
 
-Add the dependency:
+Clone and build:
 
 ```sh
-cargo add attractor
+git clone https://github.com/bkrabach/attractor.git
+cd attractor
+cargo build
 ```
 
 Parse a DOT pipeline, validate it, and run it:
@@ -369,12 +370,12 @@ During execution, the engine walks the graph node by node:
 
 ## Dependencies
 
-- [coding-agent-loop](https://github.com/strongdm/attractor) -- Autonomous coding agent loop (same workspace)
-- [unified-llm](https://github.com/strongdm/attractor) -- LLM client library (same workspace)
+- [coding-agent-loop](https://github.com/bkrabach/coding-agent-loop) -- Autonomous coding agent loop
+- [unified-llm](https://github.com/bkrabach/unified-llm) -- LLM client library
 
 ## NLSpec
 
-Implemented from the [Attractor NLSpec](https://github.com/strongdm/attractor).
+Implemented from the [Attractor NLSpec](https://github.com/bkrabach/attractor).
 
 ## License
 
