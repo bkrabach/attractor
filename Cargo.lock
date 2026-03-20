@@ -129,7 +129,7 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tracing-subscriber",
- "unified-llm 0.1.0",
+ "unified-llm",
  "uuid",
 ]
 
@@ -288,6 +288,7 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 [[package]]
 name = "coding-agent-loop"
 version = "0.1.0"
+source = "git+https://github.com/bkrabach/coding-agent-loop.git?branch=main#19ff00157fd4c67d8d4283041915b249864b6340"
 dependencies = [
  "async-trait",
  "chrono",
@@ -301,7 +302,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
- "unified-llm 0.1.0 (git+https://github.com/bkrabach/unified-llm.git)",
+ "unified-llm",
  "uuid",
 ]
 
@@ -1780,6 +1781,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -1934,27 +1936,7 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 [[package]]
 name = "unified-llm"
 version = "0.1.0"
-dependencies = [
- "async-trait",
- "base64",
- "chrono",
- "futures",
- "jsonschema",
- "rand",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "unified-llm"
-version = "0.1.0"
-source = "git+https://github.com/bkrabach/unified-llm.git#79e55477e40d0390614c379e6b3b4acccbcbef63"
+source = "git+https://github.com/bkrabach/unified-llm.git?branch=main#d97d07b88f86f42adb0f7d45c3fae9f6cc00e5e2"
 dependencies = [
  "async-trait",
  "base64",
@@ -2010,6 +1992,7 @@ checksum = "a68d3c8f01c0cfa54a75291d83601161799e4a89a39e0929f4b0354d88757a37"
 dependencies = [
  "getrandom 0.4.2",
  "js-sys",
+ "serde_core",
  "wasm-bindgen",
 ]
 

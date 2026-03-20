@@ -33,8 +33,8 @@ fn parse_consensus_task_dot() {
 
 #[test]
 fn parse_semport_dot() {
-    let content =
-        fs::read_to_string("tests/fixtures/semport.dot").expect("semport.dot not found at project root");
+    let content = fs::read_to_string("tests/fixtures/semport.dot")
+        .expect("semport.dot not found at project root");
     match attractor::parser::parse_dot(&content) {
         Ok(graph) => {
             println!(
