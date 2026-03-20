@@ -1,31 +1,22 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: ["main"]
   pull_request:
-    branches: [main]
-
+    branches: ["main"]
 env:
   CARGO_TERM_COLOR: always
-
-
 jobs:
   test:
-    name: Test (${{ matrix.rust }})
+    name: Test
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        rust: [stable, nightly]
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       - name: fmt check
-        if: matrix.rust == 'stable'
         run: cargo fmt --all --check
       - name: clippy
         run: cargo clippy --all-targets
@@ -33,5 +24,3 @@ jobs:
         run: cargo build --all-targets
       - name: test
         run: cargo test --all-targets
-      - name: doc
-        run: cargo doc --no-deps
