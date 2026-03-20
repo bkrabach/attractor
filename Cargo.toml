@@ -11,10 +11,10 @@ keywords = ["pipeline", "workflow", "ai", "llm", "graph"]
 categories = ["development-tools", "asynchronous"]
 
 [dependencies]
-# Local workspace crates — NOTE: standalone needs path refs or must be published to crates.io
-# For standalone builds, ensure these are available as sibling directories or update to published versions
-tokio        = { version = "1",    features = ["rt-multi-thread", "macros", "time", "fs", "process", "io-util", "io-std"] }
-serde        = { version = "1",    features = ["derive"] }
+unified-llm       = { git = "https://github.com/bkrabach/unified-llm.git", branch = "main" }
+coding-agent-loop = { git = "https://github.com/bkrabach/coding-agent-loop.git", branch = "main" }
+tokio        = { version = "1", features = ["rt-multi-thread", "macros", "time", "fs", "process", "io-util", "io-std"] }
+serde        = { version = "1", features = ["derive"] }
 serde_json   = "1"
 async-trait  = "0.1"
 futures      = "0.3"
@@ -22,16 +22,12 @@ thiserror    = "2"
 chrono       = { version = "0.4", features = ["serde"] }
 uuid         = { version = "1", features = ["v4"] }
 tracing      = "0.1"
-tokio-util   = { version = "0.7" }
+tokio-util   = "0.7"
 nom          = "8"
 indexmap     = { version = "2", features = ["serde"] }
-clap         = { version = "4",   features = ["derive"] }
+clap         = { version = "4", features = ["derive"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 regex        = "1"
-
-# Workspace crates — update paths as needed for standalone builds
-unified-llm       = { path = "../unified-llm" }
-coding-agent-loop = { path = "../coding-agent-loop" }
 
 [dev-dependencies]
 tokio    = { version = "1", features = ["rt-multi-thread", "macros"] }
