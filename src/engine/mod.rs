@@ -287,10 +287,7 @@ impl PipelineRunner {
     /// Store run-level configuration in the context so handlers can access it.
     fn seed_run_context(context: &Context, config: &RunConfig) {
         if let Some(ref wd) = config.working_dir {
-            context.set(
-                "_working_dir",
-                Value::Str(wd.to_string_lossy().to_string()),
-            );
+            context.set("_working_dir", Value::Str(wd.to_string_lossy().to_string()));
         }
     }
 
@@ -711,23 +708,15 @@ const HUMAN_HISTORY_MAX_BYTES: usize = 10_000;
 ///
 /// When the accumulated history exceeds [`HUMAN_HISTORY_MAX_BYTES`], early
 /// entries are truncated from the front.
-fn accumulate_human_history(
-    context: &Context,
-    updates: &HashMap<String, Value>,
-    node_id: &str,
-) {
-    let response = updates
-        .get("human.gate.response")
-        .and_then(|v| match v {
-            Value::Str(s) => Some(s.as_str()),
-            _ => None,
-        });
-    let label = updates
-        .get("human.gate.label")
-        .and_then(|v| match v {
-            Value::Str(s) => Some(s.as_str()),
-            _ => None,
-        });
+fn accumulate_human_history(context: &Context, updates: &HashMap<String, Value>, node_id: &str) {
+    let response = updates.get("human.gate.response").and_then(|v| match v {
+        Value::Str(s) => Some(s.as_str()),
+        _ => None,
+    });
+    let label = updates.get("human.gate.label").and_then(|v| match v {
+        Value::Str(s) => Some(s.as_str()),
+        _ => None,
+    });
 
     // Nothing to accumulate if no human gate keys in this update.
     if response.is_none() && label.is_none() {

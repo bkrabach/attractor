@@ -973,10 +973,7 @@ mod tests {
 
         let ctx = Context::new();
         // _last_codergen_stage points to the LLM node (has response.md).
-        ctx.set(
-            "_last_codergen_stage",
-            Value::Str("llm_node".to_string()),
-        );
+        ctx.set("_last_codergen_stage", Value::Str("llm_node".to_string()));
         // last_stage points to the tool node (no response.md).
         ctx.set("last_stage", Value::Str("tool_node".to_string()));
 

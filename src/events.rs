@@ -100,6 +100,9 @@ pub enum PipelineEvent {
         #[serde(with = "duration_millis_serde")]
         duration: Duration,
         success: bool,
+        /// Error message when the branch failed.  `None` for successful branches.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        error: Option<String>,
     },
     /// All parallel branches have completed.
     ParallelCompleted {
@@ -214,5 +217,58 @@ mod tests {
             index: 0,
         };
         let _cloned = ev.clone();
+    }
+
+    #[test]
+    fn parallel_branch_completed_with_error_serializes() {
+        let ev = PipelineEvent::ParallelBranchCompleted {
+            branch: "ReviewGemini".into(),
+            index: 2,
+            duration: Duration::from_millis(500),
+            success: false,
+            error: Some("authentication error (gemini): invalid api key".into()),
+        };
+        let json = serde_json::to_string(&ev).unwrap();
+        assert!(json.contains("\"error\""));
+        assert!(json.contains("invalid api key"));
+        let back: PipelineEvent = serde_json::from_str(&json).unwrap();
+        match back {
+            PipelineEvent::ParallelBranchCompleted { error, success, .. } => {
+                assert!(!success);
+                assert_eq!(
+                    error.as_deref(),
+                    Some("authentication error (gemini): invalid api key")
+                );
+            }
+            _ => panic!("unexpected variant"),
+        }
+    }
+
+    #[test]
+    fn parallel_branch_completed_without_error_omits_field() {
+        let ev = PipelineEvent::ParallelBranchCompleted {
+            branch: "ReviewOpus".into(),
+            index: 0,
+            duration: Duration::from_millis(200),
+            success: true,
+            error: None,
+        };
+        let json = serde_json::to_string(&ev).unwrap();
+        // error field should be absent when None (skip_serializing_if)
+        assert!(!json.contains("\"error\""));
+    }
+
+    #[test]
+    fn parallel_branch_completed_backward_compat_deserialize() {
+        // Old JSON without error field should deserialize fine
+        let json = r#"{"event":"parallel_branch_completed","branch":"A","index":0,"duration":{"__duration_ms":100},"success":true}"#;
+        let ev: PipelineEvent = serde_json::from_str(json).unwrap();
+        match ev {
+            PipelineEvent::ParallelBranchCompleted { error, success, .. } => {
+                assert!(success);
+                assert!(error.is_none());
+            }
+            _ => panic!("unexpected variant"),
+        }
     }
 }

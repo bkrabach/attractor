@@ -174,15 +174,32 @@ impl Handler for ParallelHandler {
                 let _permit = sem.acquire_owned().await.expect("semaphore closed");
                 let branch_start = Instant::now();
                 let handler = reg.resolve(&branch_node);
-                let out = handler
-                    .execute(&branch_node, &branch_ctx, &g, &lr)
-                    .await
-                    .unwrap_or_else(|e| Outcome::fail(e.to_string()));
+                let result = handler.execute(&branch_node, &branch_ctx, &g, &lr).await;
                 let _duration = branch_start.elapsed();
-                BranchResult {
-                    branch_id: bid,
-                    status: out.status,
-                    notes: out.notes,
+                match result {
+                    Ok(out) => {
+                        // Capture failure_reason for any non-success status
+                        let error = if !out.status.is_success() {
+                            let reason = &out.failure_reason;
+                            if reason.is_empty() {
+                                None
+                            } else {
+                                Some(reason.clone())
+                            }
+                        } else {
+                            None
+                        };
+                        BranchResult {
+                            branch_id: bid,
+                            status: out.status,
+                            notes: out.notes,
+                            error,
+                        }
+                    }
+                    Err(e) => {
+                        let error_msg = e.to_string();
+                        BranchResult::fail(bid, format!("Handler error: {error_msg}"), error_msg)
+                    }
                 }
             });
         }
@@ -194,12 +211,13 @@ impl Handler for ParallelHandler {
         while let Some(res) = join_set.join_next().await {
             match res {
                 Ok(branch_result) => {
-                    // Emit branch completed event.
+                    // Emit branch completed event with error detail.
                     let _ = self.event_tx.send(PipelineEvent::ParallelBranchCompleted {
                         branch: branch_result.branch_id.clone(),
                         index: results.len(),
                         duration: std::time::Duration::ZERO,
                         success: branch_result.status.is_success(),
+                        error: branch_result.error.clone(),
                     });
 
                     if error_policy == ErrorPolicy::FailFast
@@ -211,13 +229,29 @@ impl Handler for ParallelHandler {
                     }
                     results.push(branch_result);
                 }
-                Err(_join_err) => {
-                    // Task aborted or panicked — record as fail.
-                    results.push(BranchResult {
-                        branch_id: "unknown".to_string(),
-                        status: StageStatus::Fail,
-                        notes: "branch task aborted".to_string(),
+                Err(join_err) => {
+                    // Task aborted or panicked — record as fail with details.
+                    let error_msg = if join_err.is_cancelled() {
+                        "branch task cancelled".to_string()
+                    } else if join_err.is_panic() {
+                        "branch task panicked".to_string()
+                    } else {
+                        format!("branch task failed: {join_err}")
+                    };
+                    // branch_id is irrecoverable from JoinSet on panic/cancel
+                    let branch = BranchResult::fail(
+                        "unknown",
+                        "Branch task did not complete normally",
+                        &error_msg,
+                    );
+                    let _ = self.event_tx.send(PipelineEvent::ParallelBranchCompleted {
+                        branch: "unknown".to_string(),
+                        index: results.len(),
+                        duration: std::time::Duration::ZERO,
+                        success: false,
+                        error: Some(error_msg),
                     });
+                    results.push(branch);
                 }
             }
         }
@@ -415,5 +449,157 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(out.status, StageStatus::Success);
+    }
+
+    #[tokio::test]
+    async fn failed_branch_has_error_in_result() {
+        let (tx, _rx) = broadcast::channel(64);
+        let (graph, node_id) = make_parallel_graph(vec!["A", "B"]);
+        let mock = Arc::new(MockCodergenBackend::new());
+        // A succeeds, B fails with a specific reason
+        mock.add_success("A");
+        mock.add_fail("B", "authentication error: invalid api key");
+        let registry = make_registry_with_mock(mock);
+        let handler = ParallelHandler::new(registry, tx);
+
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = Context::new();
+        let node = graph.node(&node_id).unwrap().clone();
+        let out = handler
+            .execute(&node, &ctx, &graph, dir.path())
+            .await
+            .unwrap();
+        // WaitAll: one success + one fail = PartialSuccess
+        assert_eq!(out.status, StageStatus::PartialSuccess);
+
+        // Verify results in context contain the error
+        let results_str = ctx.get_string("parallel.results");
+        let results: Vec<BranchResult> = serde_json::from_str(&results_str).unwrap();
+        assert_eq!(results.len(), 2);
+
+        // Find the failed branch
+        let failed = results.iter().find(|r| r.status == StageStatus::Fail);
+        assert!(failed.is_some(), "should have a failed branch");
+        let failed = failed.unwrap();
+        assert_eq!(failed.branch_id, "B");
+        assert!(
+            failed.error.is_some(),
+            "failed branch should have error message"
+        );
+        assert_eq!(
+            failed.error.as_deref(),
+            Some("authentication error: invalid api key")
+        );
+    }
+
+    #[tokio::test]
+    async fn successful_branch_has_no_error_in_result() {
+        let (tx, _rx) = broadcast::channel(64);
+        let (graph, node_id) = make_parallel_graph(vec!["A"]);
+        let mock = Arc::new(MockCodergenBackend::new());
+        let registry = make_registry_with_mock(mock);
+        let handler = ParallelHandler::new(registry, tx);
+
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = Context::new();
+        let node = graph.node(&node_id).unwrap().clone();
+        handler
+            .execute(&node, &ctx, &graph, dir.path())
+            .await
+            .unwrap();
+
+        let results_str = ctx.get_string("parallel.results");
+        let results: Vec<BranchResult> = serde_json::from_str(&results_str).unwrap();
+        assert_eq!(results.len(), 1);
+        assert!(
+            results[0].error.is_none(),
+            "successful branch should not have error"
+        );
+    }
+
+    #[tokio::test]
+    async fn branch_failure_emits_event_with_error() {
+        let (tx, mut rx) = broadcast::channel(64);
+        let (graph, node_id) = make_parallel_graph(vec!["A"]);
+        let mock = Arc::new(MockCodergenBackend::new());
+        mock.add_fail("A", "model not found");
+        let registry = make_registry_with_mock(mock);
+        let handler = ParallelHandler::new(registry, tx);
+
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = Context::new();
+        let node = graph.node(&node_id).unwrap().clone();
+        handler
+            .execute(&node, &ctx, &graph, dir.path())
+            .await
+            .unwrap();
+
+        // Drain events and find ParallelBranchCompleted
+        let mut found_error_event = false;
+        while let Ok(ev) = rx.try_recv() {
+            if let PipelineEvent::ParallelBranchCompleted { success, error, .. } = ev {
+                assert!(!success);
+                assert!(error.is_some(), "event should carry error message");
+                assert_eq!(error.as_deref(), Some("model not found"));
+                found_error_event = true;
+            }
+        }
+        assert!(
+            found_error_event,
+            "should have received ParallelBranchCompleted with error"
+        );
+    }
+
+    /// A handler that always returns Err(EngineError) to test the error path.
+    struct ErrorHandler;
+
+    #[async_trait::async_trait]
+    impl Handler for ErrorHandler {
+        async fn execute(
+            &self,
+            _node: &Node,
+            _context: &Context,
+            _graph: &Graph,
+            _logs_root: &Path,
+        ) -> Result<crate::state::context::Outcome, EngineError> {
+            Err(EngineError::Backend(
+                "LLM provider returned 401 Unauthorized".into(),
+            ))
+        }
+    }
+
+    #[tokio::test]
+    async fn handler_error_captured_in_branch_result() {
+        let (tx, _rx) = broadcast::channel(64);
+        let (graph, node_id) = make_parallel_graph(vec!["A"]);
+
+        // Register ErrorHandler as the codergen handler
+        let default_handler = Arc::new(StartHandler);
+        let mut reg = HandlerRegistry::new(default_handler);
+        reg.register("codergen", Arc::new(ErrorHandler));
+        let reg = Arc::new(reg);
+
+        let handler = ParallelHandler::new(reg, tx);
+        let dir = tempfile::tempdir().unwrap();
+        let ctx = Context::new();
+        let node = graph.node(&node_id).unwrap().clone();
+        let out = handler
+            .execute(&node, &ctx, &graph, dir.path())
+            .await
+            .unwrap();
+        // WaitAll with 1 failed branch → PartialSuccess (not Fail)
+        assert_eq!(out.status, StageStatus::PartialSuccess);
+
+        let results_str = ctx.get_string("parallel.results");
+        let results: Vec<BranchResult> = serde_json::from_str(&results_str).unwrap();
+        assert_eq!(results.len(), 1);
+        let r = &results[0];
+        assert_eq!(r.status, StageStatus::Fail);
+        assert!(r.error.is_some());
+        assert!(
+            r.error.as_deref().unwrap().contains("401 Unauthorized"),
+            "error should contain the original error message, got: {:?}",
+            r.error
+        );
     }
 }

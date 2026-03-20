@@ -406,25 +406,18 @@ mod tests {
 
     #[test]
     fn parse_comma_with_spaces() {
-        let c =
-            parse_condition("outcome=success , context.done=true").unwrap();
+        let c = parse_condition("outcome=success , context.done=true").unwrap();
         assert_eq!(c.clauses.len(), 2);
         assert_eq!(c.clauses[0].key, ConditionKey::Outcome);
         assert_eq!(c.clauses[0].value, "success");
-        assert_eq!(
-            c.clauses[1].key,
-            ConditionKey::Context("done".to_string())
-        );
+        assert_eq!(c.clauses[1].key, ConditionKey::Context("done".to_string()));
         assert_eq!(c.clauses[1].value, "true");
     }
 
     #[test]
     fn parse_mixed_comma_and_ampersand() {
         // Mixed separators should work: comma + && in the same expression.
-        let c = parse_condition(
-            "outcome=success,context.a=1 && context.b=2",
-        )
-        .unwrap();
+        let c = parse_condition("outcome=success,context.a=1 && context.b=2").unwrap();
         assert_eq!(c.clauses.len(), 3);
         assert_eq!(c.clauses[0].value, "success");
         assert_eq!(c.clauses[1].value, "1");
@@ -443,9 +436,7 @@ mod tests {
 
     #[test]
     fn eval_comma_separated_both_pass() {
-        let c = ctx(&[
-            ("tool.output", json!("running")),
-        ]);
+        let c = ctx(&[("tool.output", json!("running"))]);
         // Both != clauses should pass when value is "running" (bare key).
         assert!(
             evaluate_condition(
@@ -462,9 +453,7 @@ mod tests {
     fn eval_comma_separated_prefixed_key() {
         // Verify with the canonical prefixed key form (context.tool.output stored
         // as "context.tool.output" in the context map).
-        let c = ctx(&[
-            ("context.tool.output", json!("all_complete")),
-        ]);
+        let c = ctx(&[("context.tool.output", json!("all_complete"))]);
         // First != clause fails because value IS "all_complete".
         assert!(
             !evaluate_condition(
@@ -476,9 +465,7 @@ mod tests {
             .unwrap()
         );
         // Now with a non-matching value — both clauses pass.
-        let c2 = ctx(&[
-            ("context.tool.output", json!("running")),
-        ]);
+        let c2 = ctx(&[("context.tool.output", json!("running"))]);
         assert!(
             evaluate_condition(
                 "context.tool.output!=all_complete,context.tool.output!=no_tasks_found",
@@ -492,9 +479,7 @@ mod tests {
 
     #[test]
     fn eval_comma_separated_first_fails() {
-        let c = ctx(&[
-            ("tool.output", json!("all_complete")),
-        ]);
+        let c = ctx(&[("tool.output", json!("all_complete"))]);
         // First != clause fails when value IS "all_complete".
         assert!(
             !evaluate_condition(
@@ -509,9 +494,7 @@ mod tests {
 
     #[test]
     fn eval_comma_separated_second_fails() {
-        let c = ctx(&[
-            ("tool.output", json!("no_tasks_found")),
-        ]);
+        let c = ctx(&[("tool.output", json!("no_tasks_found"))]);
         // Second != clause fails when value IS "no_tasks_found".
         assert!(
             !evaluate_condition(

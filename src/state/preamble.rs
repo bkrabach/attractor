@@ -432,10 +432,7 @@ mod tests {
         ctx.set("graph.goal", Value::Str("build a rocket".to_string()));
         ctx.set("last_response", Value::Str("step done".to_string()));
         ctx.set("outcome", Value::Str("success".to_string()));
-        ctx.set(
-            "human.gate.response",
-            Value::Str("looks good".to_string()),
-        );
+        ctx.set("human.gate.response", Value::Str("looks good".to_string()));
         let completed = vec!["Start".to_string(), "Plan".to_string()];
         let result = build_preamble(
             &FidelityMode::SummaryMedium,
@@ -504,10 +501,7 @@ mod tests {
         let ctx = Context::new();
         ctx.set("graph.goal", Value::Str("test".to_string()));
         ctx.set("_preamble", Value::Str("should be hidden".to_string()));
-        ctx.set(
-            "_working_dir",
-            Value::Str("/tmp/should-hide".to_string()),
-        );
+        ctx.set("_working_dir", Value::Str("/tmp/should-hide".to_string()));
         ctx.set("visible_key", Value::Str("visible".to_string()));
         let completed = vec!["Step".to_string()];
         let result = build_preamble(

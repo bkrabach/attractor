@@ -179,10 +179,13 @@ impl CodergenBackend for LlmCodergenBackend {
         // 6. Create a fresh Session and run the agentic loop.
         let mut session = Session::new(config, profile, env, self.client.clone());
 
-        session.submit(prompt).await.map_err(|e| EngineError::Handler {
-            node_id: node.id.clone(),
-            message: format!("agent session failed: {e}"),
-        })?;
+        session
+            .submit(prompt)
+            .await
+            .map_err(|e| EngineError::Handler {
+                node_id: node.id.clone(),
+                message: format!("agent session failed: {e}"),
+            })?;
 
         // 7. Extract the last non-empty assistant text from the session history.
         let text = session
@@ -303,11 +306,26 @@ pub fn print_event(event: &PipelineEvent) {
             index,
             duration,
             success,
+            error,
         } => {
-            println!(
-                "[parallel #{index}] branch completed  {branch}  success={success}  ({:.2?})",
-                duration
-            );
+            if !success {
+                if let Some(err) = &error {
+                    println!(
+                        "[parallel #{index}] branch FAILED  {branch}  error={err}  ({:.2?})",
+                        duration
+                    );
+                } else {
+                    println!(
+                        "[parallel #{index}] branch FAILED  {branch}  (no error detail)  ({:.2?})",
+                        duration
+                    );
+                }
+            } else {
+                println!(
+                    "[parallel #{index}] branch completed  {branch}  ({:.2?})",
+                    duration
+                );
+            }
         }
         PipelineEvent::ParallelCompleted {
             duration,
@@ -692,6 +710,7 @@ mod tests {
                 index: 0,
                 duration: Duration::from_millis(100),
                 success: true,
+                error: None,
             },
             PipelineEvent::ParallelCompleted {
                 duration: Duration::from_millis(300),

@@ -121,10 +121,14 @@ impl Handler for CodergenHandler {
                     // ATR-BUG-005: Ensure last_stage and last_response are set
                     // even when the backend returns a full Outcome, so downstream
                     // human gates can find the correct LLM response.
-                    outcome.context_updates.entry("last_stage".to_string())
+                    outcome
+                        .context_updates
+                        .entry("last_stage".to_string())
                         .or_insert_with(|| Value::Str(node.id.clone()));
                     let truncated: String = response_content.chars().take(200).collect();
-                    outcome.context_updates.entry("last_response".to_string())
+                    outcome
+                        .context_updates
+                        .entry("last_response".to_string())
                         .or_insert_with(|| Value::Str(truncated));
                     return Ok(outcome);
                 }

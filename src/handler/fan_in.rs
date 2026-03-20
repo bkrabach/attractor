@@ -25,6 +25,39 @@ pub struct BranchResult {
     pub status: StageStatus,
     /// Human-readable notes.
     pub notes: String,
+    /// Error message when the branch failed (handler error, LLM error, etc.).
+    ///
+    /// Present when `status == Fail` and the handler returned an error or
+    /// the branch task was aborted/panicked.  `None` for successful branches.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+impl BranchResult {
+    /// Convenience constructor for a successful branch.
+    pub fn success(branch_id: impl Into<String>, notes: impl Into<String>) -> Self {
+        BranchResult {
+            branch_id: branch_id.into(),
+            status: StageStatus::Success,
+            notes: notes.into(),
+            error: None,
+        }
+    }
+
+    /// Convenience constructor for a failed branch.
+    pub fn fail(
+        branch_id: impl Into<String>,
+        notes: impl Into<String>,
+        error: impl Into<String>,
+    ) -> Self {
+        let err = error.into();
+        BranchResult {
+            branch_id: branch_id.into(),
+            status: StageStatus::Fail,
+            notes: notes.into(),
+            error: if err.is_empty() { None } else { Some(err) },
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -152,6 +185,7 @@ mod tests {
                 branch_id: id.to_string(),
                 status,
                 notes: String::new(),
+                error: None,
             })
             .collect()
     }
@@ -255,5 +289,82 @@ mod tests {
         let node = make_simple_node();
         let out = handler.execute(&node, &ctx, &g, dir.path()).await.unwrap();
         assert_eq!(out.status, StageStatus::Fail);
+    }
+
+    // --- BranchResult error field ---
+
+    #[test]
+    fn branch_result_success_has_no_error() {
+        let br = BranchResult::success("A", "done");
+        assert_eq!(br.status, StageStatus::Success);
+        assert!(br.error.is_none());
+    }
+
+    #[test]
+    fn branch_result_fail_has_error() {
+        let br = BranchResult::fail("A", "handler error", "LLM auth failed");
+        assert_eq!(br.status, StageStatus::Fail);
+        assert_eq!(br.error.as_deref(), Some("LLM auth failed"));
+    }
+
+    #[test]
+    fn branch_result_fail_empty_error_becomes_none() {
+        let br = BranchResult::fail("A", "notes", "");
+        assert!(br.error.is_none());
+    }
+
+    #[test]
+    fn branch_result_error_serialization_roundtrip() {
+        let br = BranchResult {
+            branch_id: "X".into(),
+            status: StageStatus::Fail,
+            notes: "LLM error".into(),
+            error: Some("authentication error (anthropic): invalid api key".into()),
+        };
+        let json = serde_json::to_string(&br).unwrap();
+        assert!(json.contains("\"error\""));
+        let back: BranchResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(
+            back.error.as_deref(),
+            Some("authentication error (anthropic): invalid api key")
+        );
+    }
+
+    #[test]
+    fn branch_result_error_absent_deserializes_as_none() {
+        // Backward compat: old JSON without "error" field should deserialize fine.
+        // StageStatus serializes as lowercase (serde rename_all = "snake_case").
+        let json = r#"{"branch_id":"A","status":"success","notes":"ok"}"#;
+        let br: BranchResult = serde_json::from_str(json).unwrap();
+        assert!(br.error.is_none());
+        assert_eq!(br.branch_id, "A");
+    }
+
+    #[test]
+    fn branch_result_success_skips_error_in_serialization() {
+        let br = BranchResult::success("A", "done");
+        let json = serde_json::to_string(&br).unwrap();
+        // error field should not appear in output when None
+        assert!(!json.contains("\"error\""));
+    }
+
+    #[tokio::test]
+    async fn fan_in_with_error_field_in_results() {
+        let handler = FanInHandler::new();
+        let dir = tempfile::tempdir().unwrap();
+        let results = vec![
+            BranchResult::fail("B", "auth error", "invalid api key"),
+            BranchResult::success("A", "done"),
+        ];
+        let ctx = make_context_with_results(&results);
+        let g = Graph::new("test".into());
+        let node = make_simple_node();
+        let out = handler.execute(&node, &ctx, &g, dir.path()).await.unwrap();
+        // Should still pick the success candidate
+        assert_eq!(out.status, StageStatus::Success);
+        assert_eq!(
+            out.context_updates.get("parallel.fan_in.best_id"),
+            Some(&Value::Str("A".to_string()))
+        );
     }
 }
