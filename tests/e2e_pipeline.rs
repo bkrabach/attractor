@@ -93,8 +93,8 @@ async fn e2e_consensus_task_mock() {
 #[tokio::test]
 async fn e2e_semport_mock() {
     let dir = tempfile::tempdir().unwrap();
-    let content =
-        fs::read_to_string("tests/fixtures/semport.dot").expect("semport.dot not found at tests/fixtures/");
+    let content = fs::read_to_string("tests/fixtures/semport.dot")
+        .expect("semport.dot not found at tests/fixtures/");
 
     println!("=== Step 1b: semport.dot ===");
     let graph = match attractor::parser::parse_dot(&content) {
