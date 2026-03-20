@@ -660,16 +660,20 @@ mod tests {
     /// Build a minimal valid 2-node graph: start → exit.
     fn minimal_valid_graph() -> Graph {
         let mut g = Graph::new("test".to_string());
-        let mut start = Node::default();
-        start.id = "start".to_string();
-        start.label = "Start".to_string();
-        start.shape = "Mdiamond".to_string();
+        let start = Node {
+            id: "start".to_string(),
+            label: "Start".to_string(),
+            shape: "Mdiamond".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("start".to_string(), start);
 
-        let mut exit = Node::default();
-        exit.id = "exit".to_string();
-        exit.label = "Exit".to_string();
-        exit.shape = "Msquare".to_string();
+        let exit = Node {
+            id: "exit".to_string(),
+            label: "Exit".to_string(),
+            shape: "Msquare".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("exit".to_string(), exit);
 
         g.edges.push(Edge {
@@ -687,10 +691,12 @@ mod tests {
             ("middle", "box"),
             ("exit", "Msquare"),
         ] {
-            let mut n = Node::default();
-            n.id = id.to_string();
-            n.label = id.to_string();
-            n.shape = shape.to_string();
+            let n = Node {
+                id: id.to_string(),
+                label: id.to_string(),
+                shape: shape.to_string(),
+                ..Default::default()
+            };
             g.nodes.insert(id.to_string(), n);
         }
         g.edges.push(Edge {
@@ -747,9 +753,11 @@ mod tests {
     #[test]
     fn multiple_start_nodes_error() {
         let mut g = minimal_valid_graph();
-        let mut extra = Node::default();
-        extra.id = "start2".to_string();
-        extra.shape = "Mdiamond".to_string();
+        let extra = Node {
+            id: "start2".to_string(),
+            shape: "Mdiamond".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("start2".to_string(), extra);
         let diags = validate(&g, &[]);
         assert!(
@@ -778,10 +786,12 @@ mod tests {
         // V2-ATR-003: NLSpec §11.2 "Exactly one exit node (shape=Msquare) is required".
         // Two Msquare nodes must produce an ERROR diagnostic.
         let mut g = minimal_valid_graph();
-        let mut exit2 = Node::default();
-        exit2.id = "exit2".to_string();
-        exit2.shape = "Msquare".to_string();
-        exit2.label = "Exit2".to_string();
+        let exit2 = Node {
+            id: "exit2".to_string(),
+            shape: "Msquare".to_string(),
+            label: "Exit2".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("exit2".to_string(), exit2);
         let diags = validate(&g, &[]);
         assert!(
@@ -833,9 +843,11 @@ mod tests {
     #[test]
     fn orphan_node_error() {
         let mut g = linear_3node_graph();
-        let mut orphan = Node::default();
-        orphan.id = "orphan".to_string();
-        orphan.shape = "box".to_string();
+        let orphan = Node {
+            id: "orphan".to_string(),
+            shape: "box".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("orphan".to_string(), orphan);
         let diags = validate(&g, &[]);
         assert!(
@@ -849,9 +861,11 @@ mod tests {
     fn orphan_node_is_warning_not_error() {
         // NLSpec §11.12 parity matrix: "orphan node → warning"
         let mut g = linear_3node_graph();
-        let mut orphan = Node::default();
-        orphan.id = "orphan".to_string();
-        orphan.shape = "box".to_string();
+        let orphan = Node {
+            id: "orphan".to_string(),
+            shape: "box".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("orphan".to_string(), orphan);
         let diags = validate(&g, &[]);
         let reachability_diag = diags
@@ -1014,10 +1028,12 @@ mod tests {
         // severity, node/edge ID, and message — verify all four are present.
         let mut g = linear_3node_graph();
         // Add an orphan to trigger reachability warning (has node_id)
-        let mut orphan = Node::default();
-        orphan.id = "orphan".to_string();
-        orphan.shape = "box".to_string();
-        orphan.label = "Orphan".to_string();
+        let orphan = Node {
+            id: "orphan".to_string(),
+            shape: "box".to_string(),
+            label: "Orphan".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("orphan".to_string(), orphan);
 
         let diags = validate(&g, &[]);

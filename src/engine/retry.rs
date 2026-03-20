@@ -272,11 +272,12 @@ mod tests {
     }
 
     fn make_node(max_retries: u32, allow_partial: bool) -> Node {
-        let mut n = Node::default();
-        n.id = "test_node".into();
-        n.max_retries = max_retries;
-        n.allow_partial = allow_partial;
-        n
+        Node {
+            id: "test_node".into(),
+            max_retries,
+            allow_partial,
+            ..Default::default()
+        }
     }
 
     // --- BackoffConfig ---

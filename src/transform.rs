@@ -104,9 +104,11 @@ mod tests {
     }
 
     fn add_node(graph: &mut Graph, id: &str, prompt: &str) {
-        let mut n = Node::default();
-        n.id = id.to_string();
-        n.prompt = prompt.to_string();
+        let n = Node {
+            id: id.to_string(),
+            prompt: prompt.to_string(),
+            ..Default::default()
+        };
         graph.nodes.insert(id.to_string(), n);
     }
 

@@ -138,9 +138,10 @@ mod tests {
     use crate::state::context::StageStatus;
 
     fn make_node(id: &str) -> Node {
-        let mut n = Node::default();
-        n.id = id.to_string();
-        n
+        Node {
+            id: id.to_string(),
+            ..Default::default()
+        }
     }
 
     #[tokio::test]

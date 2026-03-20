@@ -420,18 +420,24 @@ mod tests {
 
     fn make_graph() -> Graph {
         let mut g = Graph::new("test".to_string());
-        let mut start = Node::default();
-        start.id = "start".to_string();
-        start.shape = "Mdiamond".to_string();
+        let start = Node {
+            id: "start".to_string(),
+            shape: "Mdiamond".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("start".to_string(), start);
 
-        let mut middle = Node::default();
-        middle.id = "middle".to_string();
+        let middle = Node {
+            id: "middle".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("middle".to_string(), middle);
 
-        let mut exit = Node::default();
-        exit.id = "exit".to_string();
-        exit.shape = "Msquare".to_string();
+        let exit = Node {
+            id: "exit".to_string(),
+            shape: "Msquare".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("exit".to_string(), exit);
 
         g.edges.push(Edge {
@@ -526,8 +532,10 @@ mod tests {
 
     #[test]
     fn node_apply_attrs_sets_fields() {
-        let mut n = Node::default();
-        n.id = "my_node".to_string();
+        let mut n = Node {
+            id: "my_node".to_string(),
+            ..Default::default()
+        };
         let mut attrs = HashMap::new();
         attrs.insert("shape".to_string(), Value::Str("Mdiamond".to_string()));
         attrs.insert("max_retries".to_string(), Value::Int(3));

@@ -163,10 +163,11 @@ mod tests {
     }
 
     fn make_node(fidelity: &str, thread_id: &str) -> Node {
-        let mut n = Node::default();
-        n.fidelity = fidelity.to_string();
-        n.thread_id = thread_id.to_string();
-        n
+        Node {
+            fidelity: fidelity.to_string(),
+            thread_id: thread_id.to_string(),
+            ..Default::default()
+        }
     }
 
     // --- FidelityMode::from_str ---

@@ -2,7 +2,7 @@ use std::fs;
 
 #[test]
 fn parse_consensus_task_dot() {
-    let content = fs::read_to_string("tests/fixtures/consensus_task.dot")
+    let content = fs::read_to_string("../consensus_task.dot")
         .expect("consensus_task.dot not found at project root");
     match attractor::parser::parse_dot(&content) {
         Ok(graph) => {
@@ -33,8 +33,8 @@ fn parse_consensus_task_dot() {
 
 #[test]
 fn parse_semport_dot() {
-    let content = fs::read_to_string("tests/fixtures/semport.dot")
-        .expect("semport.dot not found at project root");
+    let content =
+        fs::read_to_string("../semport.dot").expect("semport.dot not found at project root");
     match attractor::parser::parse_dot(&content) {
         Ok(graph) => {
             println!(
@@ -64,7 +64,7 @@ fn parse_semport_dot() {
 
 #[test]
 fn validate_consensus_task_dot() {
-    let content = fs::read_to_string("tests/fixtures/consensus_task.dot").unwrap();
+    let content = fs::read_to_string("../consensus_task.dot").unwrap();
     let graph = attractor::parser::parse_dot(&content).expect("parse failed");
     let diagnostics = attractor::validation::validate(&graph, &[]);
     println!("Validation diagnostics for consensus_task.dot:");
@@ -75,7 +75,7 @@ fn validate_consensus_task_dot() {
 
 #[test]
 fn validate_semport_dot() {
-    let content = fs::read_to_string("tests/fixtures/semport.dot").unwrap();
+    let content = fs::read_to_string("../semport.dot").unwrap();
     let graph = attractor::parser::parse_dot(&content).expect("parse failed");
     let diagnostics = attractor::validation::validate(&graph, &[]);
     println!("Validation diagnostics for semport.dot:");

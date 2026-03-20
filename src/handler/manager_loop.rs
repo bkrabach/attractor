@@ -222,8 +222,10 @@ mod tests {
         let handler = ManagerLoopHandler::new(factory);
 
         let mut g = Graph::new("test".into());
-        let mut n = Node::default();
-        n.id = "manager".to_string();
+        let mut n = Node {
+            id: "manager".to_string(),
+            ..Default::default()
+        };
         n.extra.insert(
             "stack.child_dotfile".to_string(),
             Value::Str(child_dot_path.to_str().unwrap().to_string()),

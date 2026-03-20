@@ -182,11 +182,12 @@ mod tests {
     }
 
     fn make_node(shape: &str, node_type: &str) -> Node {
-        let mut n = Node::default();
-        n.id = "test".to_string();
-        n.shape = shape.to_string();
-        n.node_type = node_type.to_string();
-        n
+        Node {
+            id: "test".to_string(),
+            shape: shape.to_string(),
+            node_type: node_type.to_string(),
+            ..Default::default()
+        }
     }
 
     fn make_registry() -> HandlerRegistry {

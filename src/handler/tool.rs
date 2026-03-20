@@ -118,8 +118,10 @@ mod tests {
     use std::time::Duration;
 
     fn make_node_with_command(cmd: &str) -> Node {
-        let mut n = Node::default();
-        n.id = "tool_node".to_string();
+        let mut n = Node {
+            id: "tool_node".to_string(),
+            ..Default::default()
+        };
         n.extra
             .insert("tool_command".to_string(), Value::Str(cmd.to_string()));
         n
@@ -184,7 +186,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(outcome.status, StageStatus::Fail);
-        assert!(outcome.context_updates.get("tool.exit_code").is_some());
+        assert!(outcome.context_updates.contains_key("tool.exit_code"));
     }
 
     #[tokio::test]

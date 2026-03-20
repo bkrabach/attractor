@@ -451,16 +451,20 @@ mod tests {
 
     fn make_graph_with_edges(node_id: &str, labels: &[&str]) -> Graph {
         let mut g = Graph::new("test".into());
-        let mut n = Node::default();
-        n.id = node_id.to_string();
-        n.label = "Choose:".to_string();
-        n.shape = "hexagon".to_string();
+        let n = Node {
+            id: node_id.to_string(),
+            label: "Choose:".to_string(),
+            shape: "hexagon".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert(node_id.to_string(), n);
 
         for (i, lbl) in labels.iter().enumerate() {
             let target = format!("target_{i}");
-            let mut tn = Node::default();
-            tn.id = target.clone();
+            let tn = Node {
+                id: target.clone(),
+                ..Default::default()
+            };
             g.nodes.insert(target.clone(), tn);
             g.edges.push(Edge {
                 from: node_id.to_string(),
@@ -631,16 +635,20 @@ mod tests {
 
     fn make_freeform_graph(node_id: &str) -> (Graph, Node) {
         let mut g = Graph::new("test".into());
-        let mut node = Node::default();
-        node.id = node_id.to_string();
-        node.label = "Brainstorm with Human".to_string();
-        node.shape = "hexagon".to_string();
+        let mut node = Node {
+            id: node_id.to_string(),
+            label: "Brainstorm with Human".to_string(),
+            shape: "hexagon".to_string(),
+            ..Default::default()
+        };
         node.extra
             .insert("mode".to_string(), Value::Str("freeform".to_string()));
         g.nodes.insert(node_id.to_string(), node.clone());
 
-        let mut target = Node::default();
-        target.id = "next_node".to_string();
+        let target = Node {
+            id: "next_node".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("next_node".to_string(), target);
 
         g.edges.push(Edge {

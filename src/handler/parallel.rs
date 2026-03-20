@@ -328,15 +328,19 @@ mod tests {
         };
 
         let parallel_id = "parallel_node".to_string();
-        let mut par = Node::default();
-        par.id = parallel_id.clone();
-        par.shape = "component".to_string();
+        let par = Node {
+            id: parallel_id.clone(),
+            shape: "component".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert(parallel_id.clone(), par);
 
         for bid in &branch_ids {
-            let mut n = Node::default();
-            n.id = bid.to_string();
-            n.shape = "box".to_string();
+            let n = Node {
+                id: bid.to_string(),
+                shape: "box".to_string(),
+                ..Default::default()
+            };
             g.nodes.insert(bid.to_string(), n);
 
             g.edges.push(Edge {
@@ -394,8 +398,10 @@ mod tests {
     async fn no_branches_returns_fail() {
         let (tx, _rx) = broadcast::channel(64);
         let mut g = Graph::new("test".into());
-        let mut n = Node::default();
-        n.id = "p".to_string();
+        let n = Node {
+            id: "p".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("p".to_string(), n.clone());
 
         let default_handler = Arc::new(StartHandler);

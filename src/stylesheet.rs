@@ -429,10 +429,12 @@ mod tests {
         // nodes: (id, shape, class)
         let mut g = Graph::new("test".to_string());
         for (id, shape, cls) in nodes {
-            let mut n = Node::default();
-            n.id = id.to_string();
-            n.shape = shape.to_string();
-            n.class = cls.to_string();
+            let n = Node {
+                id: id.to_string(),
+                shape: shape.to_string(),
+                class: cls.to_string(),
+                ..Default::default()
+            };
             g.nodes.insert(id.to_string(), n);
         }
         g

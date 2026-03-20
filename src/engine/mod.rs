@@ -1290,20 +1290,14 @@ digraph test {
         // Drain events with a short timeout.
         let timeout = tokio::time::Duration::from_millis(500);
         let _ = tokio::time::timeout(timeout, async {
-            loop {
-                match rx.recv().await {
-                    Ok(ev) => {
-                        let done = matches!(
-                            ev,
-                            PipelineEvent::PipelineCompleted { .. }
-                                | PipelineEvent::PipelineFailed { .. }
-                        );
-                        events.push(ev);
-                        if done {
-                            break;
-                        }
-                    }
-                    Err(_) => break,
+            while let Ok(ev) = rx.recv().await {
+                let done = matches!(
+                    ev,
+                    PipelineEvent::PipelineCompleted { .. } | PipelineEvent::PipelineFailed { .. }
+                );
+                events.push(ev);
+                if done {
+                    break;
                 }
             }
         })

@@ -40,8 +40,10 @@ mod tests {
     #[tokio::test]
     async fn returns_success_with_notes() {
         let handler = ConditionalHandler;
-        let mut node = Node::default();
-        node.id = "gate".to_string();
+        let node = Node {
+            id: "gate".to_string(),
+            ..Default::default()
+        };
         let ctx = Context::new();
         let graph = Graph::new("test".into());
         let result = handler

@@ -234,9 +234,10 @@ mod tests {
     }
 
     fn make_simple_node() -> Node {
-        let mut n = Node::default();
-        n.id = "fan_in".to_string();
-        n
+        Node {
+            id: "fan_in".to_string(),
+            ..Default::default()
+        }
     }
 
     #[tokio::test]

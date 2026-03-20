@@ -261,11 +261,12 @@ mod tests {
     }
 
     fn make_node(id: &str, prompt: &str) -> Node {
-        let mut n = Node::default();
-        n.id = id.to_string();
-        n.prompt = prompt.to_string();
-        n.label = id.to_string();
-        n
+        Node {
+            id: id.to_string(),
+            prompt: prompt.to_string(),
+            label: id.to_string(),
+            ..Default::default()
+        }
     }
 
     #[tokio::test]

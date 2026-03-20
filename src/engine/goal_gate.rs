@@ -84,18 +84,24 @@ mod tests {
             ..Default::default()
         };
 
-        let mut gate = Node::default();
-        gate.id = "critical".to_string();
-        gate.goal_gate = true;
-        gate.retry_target = "retry_node".to_string();
+        let gate = Node {
+            id: "critical".to_string(),
+            goal_gate: true,
+            retry_target: "retry_node".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("critical".to_string(), gate);
 
-        let mut retry = Node::default();
-        retry.id = "retry_node".to_string();
+        let retry = Node {
+            id: "retry_node".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("retry_node".to_string(), retry);
 
-        let mut fallback = Node::default();
-        fallback.id = "fallback_node".to_string();
+        let fallback = Node {
+            id: "fallback_node".to_string(),
+            ..Default::default()
+        };
         g.nodes.insert("fallback_node".to_string(), fallback);
 
         g
@@ -113,9 +119,11 @@ mod tests {
     #[test]
     fn no_gate_nodes_passes() {
         let mut g = Graph::new("test".into());
-        let mut n = Node::default();
-        n.id = "A".to_string();
-        n.goal_gate = false;
+        let n = Node {
+            id: "A".to_string(),
+            goal_gate: false,
+            ..Default::default()
+        };
         g.nodes.insert("A".to_string(), n);
 
         let mut outcomes = HashMap::new();
@@ -162,9 +170,11 @@ mod tests {
     fn non_gate_fail_ignored() {
         let mut g = make_gate_graph();
         // Add a non-gate node
-        let mut other = Node::default();
-        other.id = "other".to_string();
-        other.goal_gate = false;
+        let other = Node {
+            id: "other".to_string(),
+            goal_gate: false,
+            ..Default::default()
+        };
         g.nodes.insert("other".to_string(), other);
 
         let mut outcomes = HashMap::new();
@@ -205,9 +215,11 @@ mod tests {
     #[test]
     fn no_valid_target_returns_none() {
         let mut g = Graph::new("test".into());
-        let mut gate = Node::default();
-        gate.id = "gate".to_string();
-        gate.goal_gate = true;
+        let gate = Node {
+            id: "gate".to_string(),
+            goal_gate: true,
+            ..Default::default()
+        };
         g.nodes.insert("gate".to_string(), gate);
 
         let target = resolve_gate_retry_target("gate", &g);

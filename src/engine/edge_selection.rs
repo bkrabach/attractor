@@ -201,12 +201,16 @@ mod tests {
     fn make_graph_with_edges(from: &str, targets: Vec<(&str, &str, &str, i32)>) -> Graph {
         // targets: (to, label, condition, weight)
         let mut g = Graph::new("test".into());
-        let mut src = Node::default();
-        src.id = from.to_string();
+        let src = Node {
+            id: from.to_string(),
+            ..Default::default()
+        };
         g.nodes.insert(from.to_string(), src);
         for (to, lbl, cond, wt) in &targets {
-            let mut n = Node::default();
-            n.id = to.to_string();
+            let n = Node {
+                id: to.to_string(),
+                ..Default::default()
+            };
             g.nodes.insert(to.to_string(), n);
             g.edges.push(Edge {
                 from: from.to_string(),
